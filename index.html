@@ -102,7 +102,6 @@
 
         .hero-title { font-size: 2.2rem; font-weight: bold; }
 
-        /* ছোট ওয়াচ বাটন স্টাইল */
         .hero-watch-btn {
             background: var(--netflix-red);
             color: white;
@@ -112,6 +111,7 @@
             padding: 4px 10px;
             border-radius: 4px;
             transition: 0.2s;
+            cursor: pointer;
         }
         .hero-watch-btn:active { transform: scale(0.9); }
 
@@ -166,7 +166,7 @@
             overflow: hidden; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
-        /* --- সার্চ ও ক্যাটাগরি পেজ লেআউট --- */
+        /* --- পেজ লেআউট --- */
         #searchPage, #categoryPage {
             display: none;
             position: fixed;
@@ -285,7 +285,7 @@
         <section class="hero-banner" id="heroSection">
             <div class="hero-title-wrapper">
                 <h1 class="hero-title" id="heroTitle"></h1>
-                <a href="" id="heroWatchLink" class="hero-watch-btn">Watch</a>
+                <div id="heroWatchBtn" class="hero-watch-btn">Watch</div>
             </div>
             <p style="color: #b3b3b3; font-size: 14px;">Originals • 2025</p>
         </section>
@@ -324,14 +324,14 @@
     </div>
 
     <script>
-        // --- বড় ব্যানার আপডেট করার জায়গা ---
+        // --- ব্যানার কনফিগারেশন ---
         const heroConfig = {
             title: "Bhaggyolokkhi",
-            image: "https://ottbdmovie.wordpress.com/wp-content/uploads/2026/04/images281292091830129184649995.jpg",
-            watchUrl: "https://jusfuka6-bit.github.io/the/#Bhaggyolokkhi"
+            image: "https://ottbdmovie.wordpress.com/wp-content/uploads/2026/04/images281292091830129184649995.jpg"
         };
 
         const allMovies = [
+            { title: 'Bhaggyolokkhi', cat: ['Popular'], img: 'https://ottbdmovie.wordpress.com/wp-content/uploads/2026/04/images281292091830129184649995.jpg', desc: 'Bhaggyolokkhi: একটি রোমাঞ্চকর পারিবারিক গল্প।', links: [{text: '▶ Play Now', link: 'https://jusfuka6-bit.github.io/the/?Bhaggyolokkhi'}] },
             { title: 'Pathaan', cat: ['Popular', 'Hindi'], img: 'https://via.placeholder.com/150x225?text=Pathaan', desc: 'শাহরুখ খান অভিনীত অ্যাকশন মুভি।', links: [{text: '▶ Play Now', link: '#'}] },
             { title: 'Major', cat: ['Popular'], img: 'https://ottbdmovie.wordpress.com/wp-content/uploads/2026/04/mv5bowe4mjg2mzytodczmc00yjuzltg4ndetnzcwngi1njvkyjmwxkeyxkfqcgc40685529906123101576.jpg', desc: 'একটি সত্য কাহিনী।', links: [{text: '▶ Watch', link: '#'}] },
             { 
@@ -349,22 +349,21 @@
             { title: 'Naruto', cat: ['Anime'], img: 'https://via.placeholder.com/150x225?text=Naruto', desc: 'এক নিনজা কিশোরের হোকাগে হওয়ার স্বপ্ন।', links: [{text: '▶ Play', link: '#'}] }
         ];
 
-        // ব্যানার সেট করা
         function initHero() {
             const hero = document.getElementById('heroSection');
             hero.style.backgroundImage = `linear-gradient(to top, var(--black), transparent), url('${heroConfig.image}')`;
             document.getElementById('heroTitle').innerText = heroConfig.title;
-            document.getElementById('heroWatchLink').href = heroConfig.watchUrl;
+            // ওয়াচ বাটনে ক্লিক করলে টাইটেল অনুযায়ী ওপেন হবে
+            document.getElementById('heroWatchBtn').onclick = () => openDetails(heroConfig.title);
         }
 
-        // হ্যাস রাউটিং লজিক
         function applyRoute(hashValue) {
             window.location.hash = hashValue ? encodeURIComponent(hashValue) : '';
             checkAndRender();
         }
 
         function renderHome() {
-            initHero(); // ব্যানার রেন্ডার
+            initHero();
             const container = document.getElementById('movieContainer');
             const uniqueCategories = [...new Set(allMovies.flatMap(movie => movie.cat))];
             
