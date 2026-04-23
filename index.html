@@ -254,7 +254,7 @@
 
     <div id="homePage">
         <header>
-            <a href="#" class="logo">Movie BD</a>
+            <a href="javascript:void(0)" class="logo" onclick="applyRoute('')">Movie BD</a>
             <div class="header-actions">
                 <div class="glass-trigger" onclick="openSearch()">🔍 Search</div>
                 <a href="https://jusfuka6-bit.github.io/Movie-Request/" target="_blank" class="glass-trigger">Request</a>
@@ -272,7 +272,7 @@
     <div id="searchPage">
         <div class="page-header">
             <div class="search-input-wrapper">
-                <span>🔍</span>
+                <span onclick="applyRoute('')" style="cursor:pointer">🔍</span>
                 <input type="text" id="searchInput" placeholder="মুভির নাম লিখুন..." oninput="performSearch()">
             </div>
         </div>
@@ -318,17 +318,23 @@
             { title: 'Naruto', cat: ['Anime'], img: 'https://via.placeholder.com/150x225?text=Naruto', desc: 'এক নিনজা কিশোরের হোকাগে হওয়ার স্বপ্ন।', links: [{text: '▶ Play', link: '#'}] }
         ];
 
+        // --- স্মার্ট রাউটিং (PushState) লজিক ---
+        function applyRoute(path) {
+            const newUrl = window.location.pathname + (path ? '?' + encodeURIComponent(path) : '');
+            window.history.pushState(null, "", newUrl);
+            checkAndRender();
+        }
+
         function renderHome() {
             const container = document.getElementById('movieContainer');
-            const allCats = allMovies.flatMap(movie => movie.cat);
-            const uniqueCategories = [...new Set(allCats)];
+            const uniqueCategories = [...new Set(allMovies.flatMap(movie => movie.cat))];
             
             container.innerHTML = uniqueCategories.map(cat => `
                 <div class="movie-section">
                     <h2 class="row-title" onclick="openCategory('${cat}')">${cat} ›</h2>
                     <div class="movie-grid">
                         ${allMovies.filter(m => m.cat.includes(cat)).map(movie => `
-                            <div class="movie-card" onclick="openDetails('${movie.title}', '${movie.img}', '${movie.desc}', ${JSON.stringify(movie.links).replace(/"/g, '&quot;')})">
+                            <div class="movie-card" onclick="openDetails('${movie.title}')">
                                 <img src="${movie.img}">
                                 <div class="card-overlay"><span class="movie-name">${movie.title}</span></div>
                             </div>
@@ -338,20 +344,62 @@
             `).join('');
         }
 
-        function openCategory(catName) {
+        function openCategory(catName) { applyRoute(catName); }
+        function openSearch() { applyRoute("search"); }
+        function openDetails(title) { applyRoute(title); }
+
+        function checkAndRender() {
+            const query = decodeURIComponent(window.location.search.substring(1));
+            
+            document.getElementById('homePage').style.display = 'none';
+            document.getElementById('categoryPage').style.display = 'none';
+            document.getElementById('searchPage').style.display = 'none';
+            document.getElementById('detailsPage').style.display = 'none';
+
+            if (query === "search") {
+                document.getElementById('searchPage').style.display = 'block';
+                document.getElementById('searchInput').focus();
+            } 
+            else if (allMovies.some(m => m.title === query)) {
+                const movie = allMovies.find(m => m.title === query);
+                showDetailsUI(movie);
+            } 
+            else if (allMovies.some(m => m.cat.includes(query))) {
+                showCategoryUI(query);
+            } 
+            else {
+                document.getElementById('homePage').style.display = 'block';
+            }
+        }
+
+        function showDetailsUI(movie) {
+            document.getElementById('detTitle').innerText = movie.title;
+            document.getElementById('detImg').src = movie.img;
+            document.getElementById('detDesc').innerText = movie.desc;
+            const btnContainer = document.getElementById('buttonContainer');
+            btnContainer.innerHTML = movie.links.map(item => `<a href="${item.link}" class="play-btn" target="_blank">${item.text}</a>`).join('');
+            document.getElementById('detailsPage').style.display = 'block';
+            document.getElementById('wrapper').className = 'details-wrapper img-card-mode';
+            document.getElementById('detailsPage').scrollTo(0, 0);
+        }
+
+        function showCategoryUI(catName) {
             document.getElementById('categoryTitle').innerText = catName;
             const resultsBox = document.getElementById('categoryResults');
             resultsBox.innerHTML = '';
-
-            const matches = allMovies.filter(m => m.cat.includes(catName));
-            matches.forEach(movie => {
-                const div = createMovieCard(movie);
-                resultsBox.appendChild(div);
+            allMovies.filter(m => m.cat.includes(catName)).forEach(movie => {
+                resultsBox.appendChild(createMovieCard(movie));
             });
-
-            document.getElementById('homePage').style.display = 'none';
             document.getElementById('categoryPage').style.display = 'block';
-            history.pushState({page: 'category'}, catName, "");
+        }
+
+        function createMovieCard(movie) {
+            const div = document.createElement('div');
+            div.className = 'movie-card';
+            div.style.width = '100%'; 
+            div.onclick = () => openDetails(movie.title);
+            div.innerHTML = `<img src="${movie.img}"><div class="card-overlay"><span class="movie-name">${movie.title}</span></div>`;
+            return div;
         }
 
         function performSearch() {
@@ -362,68 +410,21 @@
 
             const matches = allMovies.filter(m => m.title.toLowerCase().includes(query));
             if (matches.length > 0) {
-                matches.forEach(movie => {
-                    resultsBox.appendChild(createMovieCard(movie));
-                });
+                matches.forEach(movie => resultsBox.appendChild(createMovieCard(movie)));
             } else {
-                resultsBox.innerHTML = `
-                    <div class="not-found-container">
-                        <div class="not-found-msg">এই মুভিটি খুঁজে পাওয়া যাচ্ছে না!</div>
-                        <a href="https://jusfuka6-bit.github.io/Movie-Request/" target="_blank" class="not-found-btn">মুভিটি সঠিক নাম দিয়ে রিকোয়েস্ট করুন</a>
-                    </div>`;
+                resultsBox.innerHTML = `<div class="not-found-container"><div class="not-found-msg">মুভিটি খুঁজে পাওয়া যাচ্ছে না!</div><a href="https://jusfuka6-bit.github.io/Movie-Request/" target="_blank" class="not-found-btn">মুভিটি রিকোয়েস্ট করুন</a></div>`;
             }
-        }
-
-        function createMovieCard(movie) {
-            const div = document.createElement('div');
-            div.className = 'movie-card';
-            div.style.width = '100%'; 
-            div.onclick = () => openDetails(movie.title, movie.img, movie.desc, movie.links);
-            div.innerHTML = `<img src="${movie.img}"><div class="card-overlay"><span class="movie-name">${movie.title}</span></div>`;
-            return div;
-        }
-
-        function openSearch() {
-            document.getElementById('searchPage').style.display = 'block';
-            document.getElementById('searchInput').focus();
-            history.pushState({page: 'search'}, "Search", "");
-        }
-
-        function openDetails(title, imgUrl, desc, linksArray) {
-            document.getElementById('detTitle').innerText = title;
-            document.getElementById('detImg').src = imgUrl;
-            document.getElementById('detDesc').innerText = desc;
-            const btnContainer = document.getElementById('buttonContainer');
-            btnContainer.innerHTML = ''; 
-            linksArray.forEach(item => {
-                const btn = document.createElement('a');
-                btn.href = item.link; btn.className = 'play-btn'; btn.innerText = item.text; btn.target = '_blank';
-                btnContainer.appendChild(btn);
-            });
-            document.getElementById('homePage').style.display = 'none';
-            document.getElementById('searchPage').style.display = 'none';
-            document.getElementById('categoryPage').style.display = 'none';
-            document.getElementById('detailsPage').style.display = 'block';
-            document.getElementById('wrapper').className = 'details-wrapper img-card-mode';
-            document.getElementById('detailsPage').scrollTo(0, 0);
-            history.pushState({page: 'details'}, title, "");
         }
 
         function handleScroll(el) {
             const wrapper = document.getElementById('wrapper');
-            if (el.scrollTop > 50) wrapper.className = 'details-wrapper img-full-mode';
-            else wrapper.className = 'details-wrapper img-card-mode';
+            wrapper.className = el.scrollTop > 50 ? 'details-wrapper img-full-mode' : 'details-wrapper img-card-mode';
         }
 
-        window.onpopstate = function(event) {
-            document.getElementById('detailsPage').style.display = 'none';
-            document.getElementById('searchPage').style.display = 'none';
-            document.getElementById('categoryPage').style.display = 'none';
-            document.getElementById('homePage').style.display = 'block';
-            document.getElementById('searchInput').value = '';
-        };
+        window.onpopstate = checkAndRender;
 
         renderHome();
+        checkAndRender();
     </script>
 </body>
 </html>
