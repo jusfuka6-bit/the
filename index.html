@@ -50,10 +50,32 @@
             letter-spacing: 1px;
         }
 
-        .search-trigger {
+        .header-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+        }
+
+        .glass-trigger {
             cursor: pointer;
-            font-size: 20px;
+            font-size: 12px;
             color: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+
+        .glass-trigger:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.95);
         }
 
         #homePage { display: block; padding-bottom: 50px; }
@@ -74,7 +96,15 @@
 
         /* মুভি সেকশন স্টাইল */
         .movie-section { padding: 15px 0 10px 4%; }
-        .row-title { font-size: 18px; margin-bottom: 12px; font-weight: 600; color: #fff; }
+        .row-title { 
+            font-size: 18px; 
+            margin-bottom: 12px; 
+            font-weight: 600; 
+            color: #fff; 
+            display: inline-block;
+            cursor: pointer;
+        }
+        .row-title:active { color: var(--netflix-red); }
 
         .movie-grid {
             display: flex;
@@ -115,17 +145,18 @@
             overflow: hidden; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
-        /* --- সার্চ পেজ স্টাইল --- */
-        #searchPage {
+        /* --- সার্চ ও ক্যাটাগরি পেজ লেআউট --- */
+        #searchPage, #categoryPage {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: var(--black);
             z-index: 3000;
             padding: 20px;
+            overflow-y: auto;
         }
 
-        .search-header {
+        .page-header {
             display: flex;
             align-items: center;
             gap: 15px;
@@ -153,20 +184,30 @@
             margin-left: 10px;
         }
 
-        .search-results-container {
+        .grid-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
-            overflow-y: auto;
-            max-height: calc(100vh - 100px);
         }
 
-        .not-found-msg {
+        .not-found-container {
             grid-column: 1 / -1;
             text-align: center;
-            padding-top: 50px;
-            color: var(--text-gray);
-            font-size: 16px;
+            padding: 50px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .not-found-btn {
+            background: var(--netflix-red);
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
         }
 
         /* --- ডিটেইলস পেজ --- */
@@ -205,7 +246,7 @@
             .img-card-mode #detImg { width: 350px; height: 500px; }
             .content-inner { width: 50%; }
             .movie-card { width: 160px; height: 230px; }
-            .search-results-container { grid-template-columns: repeat(6, 1fr); }
+            .grid-container { grid-template-columns: repeat(6, 1fr); }
         }
     </style>
 </head>
@@ -213,8 +254,11 @@
 
     <div id="homePage">
         <header>
-            <a href="#" class="logo">NETFLIX</a>
-            <div class="search-trigger" onclick="openSearch()">🔍</div>
+            <a href="#" class="logo">Movie BD</a>
+            <div class="header-actions">
+                <div class="glass-trigger" onclick="openSearch()">🔍 Search</div>
+                <a href="https://jusfuka6-bit.github.io/Movie-Request/" target="_blank" class="glass-trigger">Request</a>
+            </div>
         </header>
         
         <section class="hero-banner">
@@ -226,13 +270,20 @@
     </div>
 
     <div id="searchPage">
-        <div class="search-header">
+        <div class="page-header">
             <div class="search-input-wrapper">
                 <span>🔍</span>
                 <input type="text" id="searchInput" placeholder="মুভির নাম লিখুন..." oninput="performSearch()">
             </div>
         </div>
-        <div class="search-results-container" id="searchResults"></div>
+        <div class="grid-container" id="searchResults"></div>
+    </div>
+
+    <div id="categoryPage">
+        <div class="page-header">
+            <h2 id="categoryTitle" style="font-size: 24px;"></h2>
+        </div>
+        <div class="grid-container" id="categoryResults"></div>
     </div>
 
     <div id="detailsPage" onscroll="handleScroll(this)">
@@ -250,24 +301,33 @@
 
     <script>
         const allMovies = [
-            { id: 1, title: 'Pathaan', cat: 'All Movies', img: 'https://via.placeholder.com/150x225?text=Pathaan', desc: 'শাহরুখ খান অভিনীত অ্যাকশন মুভি।', links: [{text: '▶ Play Now', link: '#'}] },
-            { id: 2, title: 'Major', cat: 'All Movies', img: 'https://via.placeholder.com/150x225?text=Major', desc: 'একটি সত্য কাহিনী।', links: [{text: '▶ Watch', link: '#'}] },
-            { id: 3, title: 'Toofan', cat: 'Bengali', img: 'https://image.tmdb.org/t/p/w500/p69BYYvWUCXNn3xyu09S9m9AyST.jpg', desc: 'অ্যাকশন থ্রিলার মুভি।', links: [{text: '▶ Play Now', link: '#'}] },
-            { id: 4, title: 'Raktabeej', cat: 'Bengali', img: 'https://image.tmdb.org/t/p/w500/v9X7RR7p5AL59Y792v6X789Y.jpg', desc: 'একটি রহস্যময় সত্য ঘটনা অবলম্বনে নির্মিত সিনেমা।', links: [{text: '▶ Watch', link: '#'}] },
-            { id: 5, title: 'Jawan', cat: 'Hindi', img: 'https://via.placeholder.com/150x225?text=Jawan', desc: 'শাহরুখ খানের সিনেমা।', links: [{text: '▶ Play', link: '#'}] },
-            { id: 6, title: 'Animal', cat: 'Hindi', img: 'https://via.placeholder.com/150x225?text=Animal', desc: 'রণবীর কাপুর অভিনীত একটি ইন্টেন্স ড্রামা সিনেমা।', links: [{text: '▶ Play', link: '#'}] },
-            { id: 7, title: 'Avengers', cat: 'English', img: 'https://via.placeholder.com/150x225?text=Avengers', desc: 'পৃথিবীর শ্রেষ্ঠ নায়কদের এক হওয়ার গল্প।', links: [{text: '▶ Play', link: '#'}] },
-            { id: 8, title: 'Naruto', cat: 'Anime', img: 'https://via.placeholder.com/150x225?text=Naruto', desc: 'এক নিনজা কিশোরের হোকাগে হওয়ার স্বপ্ন।', links: [{text: '▶ Play', link: '#'}] }
+            { title: 'Pathaan', cat: ['Popular', 'Hindi'], img: 'https://via.placeholder.com/150x225?text=Pathaan', desc: 'শাহরুখ খান অভিনীত অ্যাকশন মুভি।', links: [{text: '▶ Play Now', link: '#'}] },
+            { title: 'Major', cat: ['Popular'], img: 'https://ottbdmovie.wordpress.com/wp-content/uploads/2026/04/mv5bowe4mjg2mzytodczmc00yjuzltg4ndetnzcwngi1njvkyjmwxkeyxkfqcgc40685529906123101576.jpg', desc: 'একটি সত্য কাহিনী।', links: [{text: '▶ Watch', link: '#'}] },
+            { 
+              title: 'Bachelor Point S5', 
+              cat: ['Popular', 'Bengali'], 
+              img: 'https://ottbdmovie.wordpress.com/wp-content/uploads/2026/04/wp-17683955308454638501429128093451333111551373222559.jpg', 
+              desc: '1080p | Audio: Bangla', 
+              links: [{ text: 'Episode 81-88', link: 'https://drive.google.com/file/d/1HKQjSPXz36Z7C8Jt-oqhdwZAT18xd-Uv/view?usp=drivesdk' }, { text: 'Episode 73-80', link: 'https://drive.google.com/file/d/1T9zLJMXPyOLh32cfpo4k8DgC_bFRIU0l/view?usp=drivesdk' }] 
+            },
+            { title: 'Toofan', cat: ['Bengali'], img: 'https://image.tmdb.org/t/p/w500/p69BYYvWUCXNn3xyu09S9m9AyST.jpg', desc: 'অ্যাকশন থ্রিলার মুভি।', links: [{text: '▶ Play Now', link: '#'}] },
+            { title: 'Raktabeej', cat: ['Bengali'], img: 'https://image.tmdb.org/t/p/w500/v9X7RR7p5AL59Y792v6X789Y.jpg', desc: 'একটি রহস্যময় সত্য ঘটনা অবলম্বনে নির্মিত সিনেমা।', links: [{text: '▶ Watch', link: '#'}] },
+            { title: 'Jawan', cat: ['Hindi'], img: 'https://via.placeholder.com/150x225?text=Jawan', desc: 'শাহরুখ খানের সিনেমা।', links: [{text: '▶ Play', link: '#'}] },
+            { title: 'Animal', cat: ['Hindi'], img: 'https://via.placeholder.com/150x225?text=Animal', desc: 'রণবীর কাপুর অভিনীত একটি ইন্টেন্স ড্রামা সিনেমা।', links: [{text: '▶ Play', link: '#'}] },
+            { title: 'Avengers', cat: ['English'], img: 'https://via.placeholder.com/150x225?text=Avengers', desc: 'পৃথিবীর শ্রেষ্ঠ নায়কদের এক হওয়ার গল্প।', links: [{text: '▶ Play', link: '#'}] },
+            { title: 'Naruto', cat: ['Anime'], img: 'https://via.placeholder.com/150x225?text=Naruto', desc: 'এক নিনজা কিশোরের হোকাগে হওয়ার স্বপ্ন।', links: [{text: '▶ Play', link: '#'}] }
         ];
 
         function renderHome() {
             const container = document.getElementById('movieContainer');
-            const categories = [...new Set(allMovies.map(m => m.cat))];
-            container.innerHTML = categories.map(cat => `
+            const allCats = allMovies.flatMap(movie => movie.cat);
+            const uniqueCategories = [...new Set(allCats)];
+            
+            container.innerHTML = uniqueCategories.map(cat => `
                 <div class="movie-section">
-                    <h2 class="row-title">${cat}</h2>
+                    <h2 class="row-title" onclick="openCategory('${cat}')">${cat} ›</h2>
                     <div class="movie-grid">
-                        ${allMovies.filter(m => m.cat === cat).map(movie => `
+                        ${allMovies.filter(m => m.cat.includes(cat)).map(movie => `
                             <div class="movie-card" onclick="openDetails('${movie.title}', '${movie.img}', '${movie.desc}', ${JSON.stringify(movie.links).replace(/"/g, '&quot;')})">
                                 <img src="${movie.img}">
                                 <div class="card-overlay"><span class="movie-name">${movie.title}</span></div>
@@ -278,45 +338,49 @@
             `).join('');
         }
 
-        // নতুন সার্চ লজিক
+        function openCategory(catName) {
+            document.getElementById('categoryTitle').innerText = catName;
+            const resultsBox = document.getElementById('categoryResults');
+            resultsBox.innerHTML = '';
+
+            const matches = allMovies.filter(m => m.cat.includes(catName));
+            matches.forEach(movie => {
+                const div = createMovieCard(movie);
+                resultsBox.appendChild(div);
+            });
+
+            document.getElementById('homePage').style.display = 'none';
+            document.getElementById('categoryPage').style.display = 'block';
+            history.pushState({page: 'category'}, catName, "");
+        }
+
         function performSearch() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const resultsBox = document.getElementById('searchResults');
             resultsBox.innerHTML = '';
-            
             if (query === "") return;
 
-            // ফিল্টার মুভি
             const matches = allMovies.filter(m => m.title.toLowerCase().includes(query));
-
-            // লেটার পজিশন অনুযায়ী সর্ট করা
-            matches.sort((a, b) => {
-                const aName = a.title.toLowerCase();
-                const bName = b.title.toLowerCase();
-                
-                const aStarts = aName.startsWith(query);
-                const bStarts = bName.startsWith(query);
-
-                if (aStarts && !bStarts) return -1; // 'a' উপরে যাবে
-                if (!aStarts && bStarts) return 1;  // 'b' উপরে যাবে
-                return aName.localeCompare(bName);  // অন্যান্য ক্ষেত্রে বর্ণানুক্রমিকভাবে
-            });
-
             if (matches.length > 0) {
                 matches.forEach(movie => {
-                    const div = document.createElement('div');
-                    div.className = 'movie-card';
-                    div.style.width = '100%'; 
-                    div.onclick = () => {
-                        window.history.back();
-                        setTimeout(() => openDetails(movie.title, movie.img, movie.desc, movie.links), 100);
-                    };
-                    div.innerHTML = `<img src="${movie.img}"><div class="card-overlay"><span class="movie-name">${movie.title}</span></div>`;
-                    resultsBox.appendChild(div);
+                    resultsBox.appendChild(createMovieCard(movie));
                 });
             } else {
-                resultsBox.innerHTML = `<div class="not-found-msg">এই মুভিটি খুঁজে পাওয়া যাচ্ছে না, আবার চেষ্টা করুন।</div>`;
+                resultsBox.innerHTML = `
+                    <div class="not-found-container">
+                        <div class="not-found-msg">এই মুভিটি খুঁজে পাওয়া যাচ্ছে না!</div>
+                        <a href="https://jusfuka6-bit.github.io/Movie-Request/" target="_blank" class="not-found-btn">মুভিটি সঠিক নাম দিয়ে রিকোয়েস্ট করুন</a>
+                    </div>`;
             }
+        }
+
+        function createMovieCard(movie) {
+            const div = document.createElement('div');
+            div.className = 'movie-card';
+            div.style.width = '100%'; 
+            div.onclick = () => openDetails(movie.title, movie.img, movie.desc, movie.links);
+            div.innerHTML = `<img src="${movie.img}"><div class="card-overlay"><span class="movie-name">${movie.title}</span></div>`;
+            return div;
         }
 
         function openSearch() {
@@ -337,6 +401,8 @@
                 btnContainer.appendChild(btn);
             });
             document.getElementById('homePage').style.display = 'none';
+            document.getElementById('searchPage').style.display = 'none';
+            document.getElementById('categoryPage').style.display = 'none';
             document.getElementById('detailsPage').style.display = 'block';
             document.getElementById('wrapper').className = 'details-wrapper img-card-mode';
             document.getElementById('detailsPage').scrollTo(0, 0);
@@ -352,13 +418,12 @@
         window.onpopstate = function(event) {
             document.getElementById('detailsPage').style.display = 'none';
             document.getElementById('searchPage').style.display = 'none';
+            document.getElementById('categoryPage').style.display = 'none';
             document.getElementById('homePage').style.display = 'block';
             document.getElementById('searchInput').value = '';
-            document.getElementById('searchResults').innerHTML = '';
         };
 
         renderHome();
     </script>
 </body>
-  </html>
-  
+</html>
