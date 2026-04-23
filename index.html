@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Movie App | Classic View</title>
     <style>
         :root {
@@ -19,6 +19,7 @@
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             scrollbar-width: none; 
             -ms-overflow-style: none; 
+            -webkit-tap-highlight-color: transparent;
         }
 
         *::-webkit-scrollbar { display: none; }
@@ -27,6 +28,7 @@
             background-color: var(--black);
             color: white;
             overflow-x: hidden;
+            touch-action: pan-x pan-y;
         }
 
         /* --- হোম স্ক্রিন হেডার --- */
@@ -82,17 +84,36 @@
 
         .hero-banner {
             height: 55vh;
-            background: linear-gradient(to top, var(--black), transparent), 
-                        url('https://images.alphacoders.com/131/1317070.jpeg');
             background-size: cover;
             background-position: center;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             padding: 40px 4%;
+            transition: 0.3s;
         }
 
-        .hero-title { font-size: 2.2rem; margin-bottom: 5px; font-weight: bold; }
+        .hero-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .hero-title { font-size: 2.2rem; font-weight: bold; }
+
+        /* ছোট ওয়াচ বাটন স্টাইল */
+        .hero-watch-btn {
+            background: var(--netflix-red);
+            color: white;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .hero-watch-btn:active { transform: scale(0.9); }
 
         /* মুভি সেকশন স্টাইল */
         .movie-section { padding: 15px 0 10px 4%; }
@@ -254,15 +275,18 @@
 
     <div id="homePage">
         <header>
-            <a href="javascript:void(0)" class="logo" onclick="applyRoute('')">Movie BD</a>
+            <a href="#" class="logo" onclick="applyRoute('')">Movie BD</a>
             <div class="header-actions">
                 <div class="glass-trigger" onclick="openSearch()">🔍 Search</div>
                 <a href="https://jusfuka6-bit.github.io/Movie-Request/" target="_blank" class="glass-trigger">Request</a>
             </div>
         </header>
         
-        <section class="hero-banner">
-            <h1 class="hero-title">Bhaggyolokkhi</h1>
+        <section class="hero-banner" id="heroSection">
+            <div class="hero-title-wrapper">
+                <h1 class="hero-title" id="heroTitle"></h1>
+                <a href="" id="heroWatchLink" class="hero-watch-btn">Watch</a>
+            </div>
             <p style="color: #b3b3b3; font-size: 14px;">Originals • 2025</p>
         </section>
 
@@ -300,6 +324,13 @@
     </div>
 
     <script>
+        // --- বড় ব্যানার আপডেট করার জায়গা ---
+        const heroConfig = {
+            title: "Bhaggyolokkhi",
+            image: "https://ottbdmovie.wordpress.com/wp-content/uploads/2026/04/images281292091830129184649995.jpg",
+            watchUrl: "https://jusfuka6-bit.github.io/the/#Bhaggyolokkhi"
+        };
+
         const allMovies = [
             { title: 'Pathaan', cat: ['Popular', 'Hindi'], img: 'https://via.placeholder.com/150x225?text=Pathaan', desc: 'শাহরুখ খান অভিনীত অ্যাকশন মুভি।', links: [{text: '▶ Play Now', link: '#'}] },
             { title: 'Major', cat: ['Popular'], img: 'https://ottbdmovie.wordpress.com/wp-content/uploads/2026/04/mv5bowe4mjg2mzytodczmc00yjuzltg4ndetnzcwngi1njvkyjmwxkeyxkfqcgc40685529906123101576.jpg', desc: 'একটি সত্য কাহিনী।', links: [{text: '▶ Watch', link: '#'}] },
@@ -318,14 +349,22 @@
             { title: 'Naruto', cat: ['Anime'], img: 'https://via.placeholder.com/150x225?text=Naruto', desc: 'এক নিনজা কিশোরের হোকাগে হওয়ার স্বপ্ন।', links: [{text: '▶ Play', link: '#'}] }
         ];
 
-        // --- স্মার্ট রাউটিং (PushState) লজিক ---
-        function applyRoute(path) {
-            const newUrl = window.location.pathname + (path ? '?' + encodeURIComponent(path) : '');
-            window.history.pushState(null, "", newUrl);
+        // ব্যানার সেট করা
+        function initHero() {
+            const hero = document.getElementById('heroSection');
+            hero.style.backgroundImage = `linear-gradient(to top, var(--black), transparent), url('${heroConfig.image}')`;
+            document.getElementById('heroTitle').innerText = heroConfig.title;
+            document.getElementById('heroWatchLink').href = heroConfig.watchUrl;
+        }
+
+        // হ্যাস রাউটিং লজিক
+        function applyRoute(hashValue) {
+            window.location.hash = hashValue ? encodeURIComponent(hashValue) : '';
             checkAndRender();
         }
 
         function renderHome() {
+            initHero(); // ব্যানার রেন্ডার
             const container = document.getElementById('movieContainer');
             const uniqueCategories = [...new Set(allMovies.flatMap(movie => movie.cat))];
             
@@ -349,23 +388,23 @@
         function openDetails(title) { applyRoute(title); }
 
         function checkAndRender() {
-            const query = decodeURIComponent(window.location.search.substring(1));
+            const hash = decodeURIComponent(window.location.hash.substring(1));
             
             document.getElementById('homePage').style.display = 'none';
             document.getElementById('categoryPage').style.display = 'none';
             document.getElementById('searchPage').style.display = 'none';
             document.getElementById('detailsPage').style.display = 'none';
 
-            if (query === "search") {
+            if (hash === "search") {
                 document.getElementById('searchPage').style.display = 'block';
                 document.getElementById('searchInput').focus();
             } 
-            else if (allMovies.some(m => m.title === query)) {
-                const movie = allMovies.find(m => m.title === query);
+            else if (allMovies.some(m => m.title === hash)) {
+                const movie = allMovies.find(m => m.title === hash);
                 showDetailsUI(movie);
             } 
-            else if (allMovies.some(m => m.cat.includes(query))) {
-                showCategoryUI(query);
+            else if (allMovies.some(m => m.cat.includes(hash))) {
+                showCategoryUI(hash);
             } 
             else {
                 document.getElementById('homePage').style.display = 'block';
@@ -421,8 +460,7 @@
             wrapper.className = el.scrollTop > 50 ? 'details-wrapper img-full-mode' : 'details-wrapper img-card-mode';
         }
 
-        window.onpopstate = checkAndRender;
-
+        window.addEventListener('hashchange', checkAndRender);
         renderHome();
         checkAndRender();
     </script>
