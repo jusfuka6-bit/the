@@ -331,8 +331,6 @@
         };
 
         const allMovies = [
-           
-            
             { title: 'Major', cat: ['Popular'], img: 'https://ottbdmovie.wordpress.com/wp-content/uploads/2026/04/mv5bowe4mjg2mzytodczmc00yjuzltg4ndetnzcwngi1njvkyjmwxkeyxkfqcgc40685529906123101576.jpg', desc: 'একটি সত্য কাহিনী।', links: [{text: '▶ Watch', link: '#'}] },
 // Bangla           
             
@@ -898,7 +896,6 @@
             const hero = document.getElementById('heroSection');
             hero.style.backgroundImage = `linear-gradient(to top, var(--black), transparent), url('${heroConfig.image}')`;
             document.getElementById('heroTitle').innerText = heroConfig.title;
-            // ওয়াচ বাটনে ক্লিক করলে টাইটেল অনুযায়ী ওপেন হবে
             document.getElementById('heroWatchBtn').onclick = () => openDetails(heroConfig.title);
         }
 
@@ -991,7 +988,12 @@
             resultsBox.innerHTML = '';
             if (query === "") return;
 
-            const matches = allMovies.filter(m => m.title.toLowerCase().includes(query));
+            // ফিল্টারিং লজিক: শুরুতে থাকা মুভিগুলো আগে আসবে
+            const startsWith = allMovies.filter(m => m.title.toLowerCase().startsWith(query));
+            const contains = allMovies.filter(m => m.title.toLowerCase().includes(query) && !m.title.toLowerCase().startsWith(query));
+            
+            const matches = [...startsWith, ...contains];
+
             if (matches.length > 0) {
                 matches.forEach(movie => resultsBox.appendChild(createMovieCard(movie)));
             } else {
